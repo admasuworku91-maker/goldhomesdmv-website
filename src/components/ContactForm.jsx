@@ -1,27 +1,38 @@
 import { useState } from 'react'
 import { site } from '../siteConfig'
 
-// NOTE: This form currently opens the visitor's email app with a pre-filled
-// message (via a mailto: link) — no backend required, but it depends on the
-// visitor having a mail client configured. For a more reliable inbox, wire
-// this up to a form service (e.g. Netlify Forms, Formspree) before launch.
+// Submits straight to Formspree so the message lands in the inbox above
+// without depending on the visitor having a mail client configured. Falls
+// back to a mailto: link if the request itself fails (e.g. offline).
 
 export default function ContactForm() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
-  const [sent, setSent] = useState(false)
+  const [status, setStatus] = useState('idle') // idle | sending | sent | error
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    const subject = encodeURIComponent(`New inquiry from ${form.name || 'website visitor'}`)
-    const body = encodeURIComponent(
-      `Name: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}\n\n${form.message}`,
-    )
-    window.location.href = `mailto:${site.email}?subject=${subject}&body=${body}`
-    setSent(true)
+    setStatus('sending')
+    try {
+      const res = await fetch(site.formspreeEndpoint, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          message: form.message,
+          _subject: `New inquiry from ${form.name || 'website visitor'}`,
+        }),
+      })
+      if (!res.ok) throw new Error('submit failed')
+      setStatus('sent')
+    } catch {
+      setStatus('error')
+    }
   }
 
   return (
@@ -63,10 +74,16 @@ export default function ContactForm() {
             Your Message
             <textarea rows={5} required value={form.message} onChange={update('message')} />
           </label>
-          <button className="btn btn-gold" type="submit">
-            Send Message
+          <button className="btn btn-gold" type="submit" disabled={status === 'sending'}>
+            {status === 'sending' ? 'Sending…' : 'Send Message'}
           </button>
-          {sent && <p className="form-note">Opening your email app to send this message…</p>}
+          {status === 'sent' && <p className="form-note">Message sent — I'll get back to you soon!</p>}
+          {status === 'error' && (
+            <p className="form-note">
+              Something went wrong. Please call/text {site.phoneDisplay} or{' '}
+              <a href={`mailto:${site.email}`}>email me directly</a>.
+            </p>
+          )}
         </form>
       </div>
     </section>

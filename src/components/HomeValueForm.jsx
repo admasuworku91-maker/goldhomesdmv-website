@@ -4,24 +4,36 @@ import { site } from '../siteConfig'
 // A separate, single-purpose lead form for sellers. Asking for just the
 // property address (instead of a generic message box) is what makes this
 // convert better than the general contact form — it promises something
-// specific back. Same mailto: approach as ContactForm — see note there.
+// specific back. Same Formspree approach as ContactForm — see note there.
 
 export default function HomeValueForm() {
   const [form, setForm] = useState({ address: '', name: '', email: '', phone: '' })
-  const [sent, setSent] = useState(false)
+  const [status, setStatus] = useState('idle') // idle | sending | sent | error
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    const subject = encodeURIComponent(`Home value request: ${form.address}`)
-    const body = encodeURIComponent(
-      `Property address: ${form.address}\nName: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}`,
-    )
-    window.location.href = `mailto:${site.email}?subject=${subject}&body=${body}`
-    setSent(true)
+    setStatus('sending')
+    try {
+      const res = await fetch(site.formspreeEndpoint, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: form.address,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          _subject: `Home value request: ${form.address}`,
+        }),
+      })
+      if (!res.ok) throw new Error('submit failed')
+      setStatus('sent')
+    } catch {
+      setStatus('error')
+    }
   }
 
   return (
@@ -61,10 +73,16 @@ export default function HomeValueForm() {
             Your Phone
             <input type="tel" value={form.phone} onChange={update('phone')} />
           </label>
-          <button className="btn btn-gold" type="submit">
-            Get My Free Home Value
+          <button className="btn btn-gold" type="submit" disabled={status === 'sending'}>
+            {status === 'sending' ? 'Sending…' : 'Get My Free Home Value'}
           </button>
-          {sent && <p className="form-note">Opening your email app to send this request…</p>}
+          {status === 'sent' && <p className="form-note">Request sent — I'll follow up with your estimate soon!</p>}
+          {status === 'error' && (
+            <p className="form-note">
+              Something went wrong. Please call/text {site.phoneDisplay} or{' '}
+              <a href={`mailto:${site.email}`}>email me directly</a>.
+            </p>
+          )}
         </form>
       </div>
     </section>

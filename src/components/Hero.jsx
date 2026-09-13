@@ -13,8 +13,8 @@ export default function Hero() {
             from the first tour to closing day.
           </p>
           <div className="hero-actions">
-            <a className="btn btn-gold" href="#contact">
-              Start Your Home Search
+            <a className="btn btn-gold" href={site.leadFormUrl} target="_blank" rel="noreferrer">
+              Start Your Consultation
             </a>
             <a className="btn btn-outline" href={site.phoneHref}>
               <svg className="icon" aria-hidden="true"><use href="/icons.svg#icon-phone" /></svg>

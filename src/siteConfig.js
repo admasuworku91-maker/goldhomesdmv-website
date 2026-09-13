@@ -9,9 +9,8 @@ export const site = {
   phoneHref: 'tel:12023906053',
   smsHref: 'sms:12023906053',
   email: 'admasuworku91@gmail.com',
-  // Forms POST here (Formspree) so submissions reach the inbox above
-  // directly, without depending on the visitor having a mail client set up.
-  formspreeEndpoint: 'https://formspree.io/f/mwvaqodn',
+  // One buyer-and-seller consultation form feeds the Gold Homes DMV Lead Tracker.
+  leadFormUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScv-iyR7n0oIL_m1e9j5Q5fNft-3OgBK2B4R_IkdnI5hR1oGg/viewform',
   serviceAreas: ['Montgomery County, MD', 'Howard County, MD', "Prince George's County, MD"],
   social: {
     facebook: 'https://www.facebook.com/profile.php?id=61571965382964',
